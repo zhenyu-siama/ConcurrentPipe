@@ -7,7 +7,7 @@ using System.Diagnostics;
 using System.IO;
 using Newtonsoft.Json;
 using ConcurrentPipe.Entities;
-
+using System.Collections.Concurrent;
 
 namespace ConcurrentPipe
 {
@@ -72,6 +72,8 @@ namespace ConcurrentPipe
             return cacheSetting;
         }
 
+        static ConcurrentDictionary<int, Process> processes = new ConcurrentDictionary<int, Process>();
+
         static Task<TaskResult> RunCommand(string batch, string command)
         {
             Console.WriteLine($"Begin to run: {command}");
@@ -88,7 +90,10 @@ namespace ConcurrentPipe
             {
                 using (Process action = Process.Start(commandProcess))
                 {
+                    processes.AddOrUpdate(action.Id, action, (id, value)=> action);
                     action.WaitForExit();
+                    Process removed = null;
+                    while(processes.ContainsKey(action.Id) && !processes.TryRemove(action.Id, out removed)) { }
                     string output = "";
                     string error = "";
                     using (StreamReader reader = action.StandardOutput)
@@ -115,6 +120,16 @@ namespace ConcurrentPipe
                         Console.ForegroundColor = ConsoleColor.Red;
                         Console.Error.WriteLine(result.StandardError);
                         Console.ForegroundColor = ConsoleColor.White;
+                        while(processes.Count > 0)
+                        {
+                            var first = processes.First();
+                            removed = null;
+                            while (processes.ContainsKey(first.Key) && !processes.TryRemove(first.Key, out removed))
+                            {
+                                if (!removed.HasExited)
+                                    removed.Kill();
+                            }
+                        }
                         Environment.Exit(result.ExitCode);
                     }
                     return result;

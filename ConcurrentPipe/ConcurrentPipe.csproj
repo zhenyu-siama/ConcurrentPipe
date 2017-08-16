@@ -7,7 +7,7 @@
     <ProjectGuid>{9F32B79D-084F-45F3-AA2F-B2E21E43E0B2}</ProjectGuid>
     <OutputType>Exe</OutputType>
     <RootNamespace>ConcurrentPipe</RootNamespace>
-    <AssemblyName>ConcurrentPipe</AssemblyName>
+    <AssemblyName>cpipe</AssemblyName>
     <TargetFrameworkVersion>v4.6.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
