@@ -1,0 +1,18 @@
+﻿{
+  "Runners": {
+    "test": {
+      "Timeout": 900,
+      "Commands": [
+        "dir",
+        "npmc"
+      ]
+    },
+    "build": {
+      "Timeout": 900,
+      "Commands": [
+        "ng build",
+        "ng build --prod --aot=false --environment=staging --output-path=dist/staging -aot=false --environment=staging --output-path=dist/staging"
+      ]
+    }
+  }
+}
