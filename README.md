@@ -2,7 +2,9 @@
 concurrent tool for cli
 
 cpipe will run cmd tasks in serial and parallel ways
-```json
+
+the following example shouw how it can orchestrate the serial and parallel tasks
+```javascript
 {
   "Runners": { // dictionary of runners
     "test": { // this is the key of a runner in the dictionary. use "cpipe test" in cmd to run only this runner
@@ -73,4 +75,14 @@ cpipe will run cmd tasks in serial and parallel ways
   }
 }
 
+```
+
+to run the "test" section, simply use:
+```
+cpipe test
+```
+
+if you want to run all the sections, just use:
+```
+cpipe
 ```
