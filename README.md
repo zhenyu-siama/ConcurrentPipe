@@ -3,7 +3,7 @@ concurrent tool for cli
 
 cpipe will run cmd tasks in serial and parallel ways
 
-the following example shouw how it can orchestrate the serial and parallel tasks
+the following example of "concurrent.json" shows how it can orchestrate the serial and parallel tasks
 ```javascript
 {
   "Runners": { // dictionary of runners
