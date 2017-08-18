@@ -1,5 +1,5 @@
 # ConcurrentPipe
-concurrent tool for cli
+concurrent cli tool for team city builds/tests pipeline. it make team city pipelines organize in proper serial and parallel pattern.
 
 cpipe will run cmd tasks in serial and parallel ways
 
