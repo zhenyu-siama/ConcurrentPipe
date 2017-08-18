@@ -1,6 +1,8 @@
 # ConcurrentPipe
 concurrent cli tool for team city builds/tests pipeline. it make team city pipelines organize in proper serial and parallel pattern.
 
+it can be also used to orchestrate integration tests where tests depend on the startup of some other services.
+
 cpipe will run cmd tasks in serial and parallel ways
 
 the following example of "concurrent.json" shows how it can orchestrate the serial and parallel tasks
