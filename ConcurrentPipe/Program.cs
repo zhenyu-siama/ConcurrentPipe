@@ -1,13 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Diagnostics;
 using System.IO;
 using Newtonsoft.Json;
 using ConcurrentPipe.Entities;
 using System.Collections.Concurrent;
+using System.Threading;
 
 namespace ConcurrentPipe
 {
@@ -40,7 +41,7 @@ namespace ConcurrentPipe
                 foreach(string runnerKey in concurrentSettings.Runners.Keys)
                 {
                     RunnerSetting runner = concurrentSettings.Runners[runnerKey];
-                    Task.WaitAll(runner.Commands.Select(command => RunCommand(runnerKey, command)).ToArray(), runner.Timeout * 1000);
+                    ExecuteRunner(runner);
                 }
             }
             else
@@ -50,11 +51,37 @@ namespace ConcurrentPipe
                     if (concurrentSettings.Runners.ContainsKey(arg))
                     {
                         RunnerSetting runner = concurrentSettings.Runners[arg];
-                        Task.WaitAll(runner.Commands.Select(command => RunCommand(arg, command)).ToArray(), runner.Timeout * 1000);
+                        ExecuteRunner(runner);
                     }
                 }
             }
             
+        }
+
+        static void ExecuteRunner(RunnerSetting runner)
+        {
+            //execute all the commands first
+            Task.WaitAll(runner.Commands.Select(command => RunCommand(runner.Name, command)).ToArray(), runner.Timeout * 1000);
+
+            //then prepare the alive ones if there are any
+            List<Regex> checks = runner.ReadyChecks?.Select(check => new Regex(check)).ToList();
+            List<Process> alives = null;
+            if(runner.Alives != null && runner.Alives.Count > 0)
+                alives = runner.Alives.Select(command => PrepareProcess(runner.Name, command, checks, runner.ReadyTimeout)).ToList();
+
+            //run all the sub runners in serial
+            if(runner.Runners != null && runner.Runners.Count > 0)
+                foreach(RunnerSetting subRunner in runner.Runners)
+                {
+                    ExecuteRunner(subRunner);
+                }
+
+            if(alives != null && alives.Count > 0)
+                foreach(Process action in alives)
+                {
+                    StopProcess(action);
+                }
+
         }
 
         static ConcurrentSettings CreateConcurrentSetting(string filename)
@@ -120,16 +147,7 @@ namespace ConcurrentPipe
                         Console.ForegroundColor = ConsoleColor.Red;
                         Console.Error.WriteLine(result.StandardError);
                         Console.ForegroundColor = ConsoleColor.White;
-                        while(processes.Count > 0)
-                        {
-                            var first = processes.First();
-                            removed = null;
-                            while (processes.ContainsKey(first.Key) && !processes.TryRemove(first.Key, out removed))
-                            {
-                                if (!removed.HasExited)
-                                    removed.Kill();
-                            }
-                        }
+                        KillAll();
                         Environment.Exit(result.ExitCode);
                     }
                     return result;
@@ -138,6 +156,112 @@ namespace ConcurrentPipe
             runner.Start();
             return runner;
         }
+
+        static Process PrepareProcess(string batch, string command, List<Regex> checks, int timeout)
+        {
+            Console.WriteLine($"Begin to prepare: {command}");
+            ProcessStartInfo commandProcess = new ProcessStartInfo("cmd.exe")
+            {
+                Arguments = $"/c {command}",
+                UseShellExecute = false,
+                RedirectStandardError = true,
+                RedirectStandardInput = false,
+                RedirectStandardOutput = true,
+                WorkingDirectory = Directory.GetCurrentDirectory()
+            };
+            Process action = Process.Start(commandProcess);
+            processes.AddOrUpdate(action.Id, action, (id, value) => action);
+            action.Exited += onExited;
+
+            if(checks != null && checks.Count > 0)
+            {
+                Stopwatch watch = new Stopwatch();
+
+                watch.Start();
+
+                using (StreamReader reader = action.StandardOutput)
+                {
+                    while (watch.ElapsedMilliseconds < timeout * 1000)
+                    {
+                        string output = reader.ReadLine();
+                        if (checks.Any(check => check.IsMatch(output)))
+                            break;
+                        Thread.Sleep(100);
+                    }
+                }
+                watch.Stop();
+            }
+
+            return action;
+        }
+
+        static void StopProcess(Process action)
+        {
+            Process removed = null;
+            while (processes.ContainsKey(action.Id) && !processes.TryRemove(action.Id, out removed)) { }
+            removed.Exited -= onExited;
+            removed.Kill();
+        }
+
+        static void onExited(object sender, EventArgs e)
+        {
+            Process action = (Process)sender;
+            if (processes.ContainsKey(action.Id) && action.ExitCode != 0)
+            {
+                if (action.ExitCode != 0)
+                {
+                    string output;
+                    string error;
+                    using (StreamReader reader = action.StandardOutput)
+                    {
+                        output = reader.ReadToEnd();
+                    }
+                    using (StreamReader reader = action.StandardError)
+                    {
+                        error = reader.ReadToEnd();
+                    }
+                    TaskResult result = new TaskResult()
+                    {
+                        ExitCode = action.ExitCode,
+                        StandardOutput = output,
+                        StandardError = error
+                    };
+
+                    //exit with non-zero code
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine($"Error When: {action.ProcessName}");
+                    Console.ForegroundColor = ConsoleColor.White;
+                    Console.WriteLine(result.StandardOutput);
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.Error.WriteLine(result.StandardError);
+                    Console.ForegroundColor = ConsoleColor.White;
+                    //not gracefully killed
+                    KillAll();
+                    Environment.Exit(action.ExitCode);
+                }
+                else
+                {
+                    Process removed = null;
+                    while (processes.ContainsKey(action.Id) && !processes.TryRemove(action.Id, out removed)) { }
+                }
+            }
+        }
+
+        static void KillAll()
+        {
+            Process removed = null;
+            while (processes.Count > 0)
+            {
+                var first = processes.First();
+                removed = null;
+                while (processes.ContainsKey(first.Key) && !processes.TryRemove(first.Key, out removed))
+                {
+                    if (!removed.HasExited)
+                        removed.Kill();
+                }
+            }
+        }
+        
     }
 
 

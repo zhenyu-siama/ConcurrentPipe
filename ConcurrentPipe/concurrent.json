@@ -1,17 +1,35 @@
 ﻿{
   "Runners": {
     "test": {
+      "Name": "Basic Tests",
       "Timeout": 900,
       "Commands": [
         "dir",
         "npmc"
+      ],
+      "Alives": [
+        "node server"
+      ],
+      "ReadyChecks": [
+        "Node Server is Listening at 8776"
+      ],
+      "Runners": [
+        {
+          "Name": "e2e test client",
+          "Timeout": 900,
+          "Commands": [
+            "node client",
+            "node error"
+          ]
+        }
       ]
     },
     "build": {
+      "Name": "ng builds in parallel",
       "Timeout": 900,
       "Commands": [
         "ng build",
-        "ng build --prod --aot=false --environment=staging --output-path=dist/staging -aot=false --environment=staging --output-path=dist/staging"
+        "ng build --prod --aot=false --environment=staging --output-path=dist/staging"
       ]
     }
   }

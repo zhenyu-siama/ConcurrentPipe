@@ -13,7 +13,12 @@ namespace ConcurrentPipe.Entities
 
     public class RunnerSetting
     {
-        public int Timeout { get; set; }
+        public string Name { get; set; }
+        public int Timeout { get; set; } = 100;
         public List<string> Commands { get; set; }
+        public List<string> ReadyChecks { get; set; }
+        public int ReadyTimeout { get; set; } = 100;
+        public List<string> Alives { get; set; }
+        public List<RunnerSetting> Runners { get; set; }
     }
 }
