@@ -7,3 +7,4 @@ C:\Users\Jack\documents\visual studio 2017\Projects\ConcurrentPipe\ConcurrentPip
 C:\Users\Jack\documents\visual studio 2017\Projects\ConcurrentPipe\ConcurrentPipe\bin\Debug\cpipe.pdb
 C:\Users\Jack\documents\visual studio 2017\Projects\ConcurrentPipe\ConcurrentPipe\obj\Debug\cpipe.exe
 C:\Users\Jack\documents\visual studio 2017\Projects\ConcurrentPipe\ConcurrentPipe\obj\Debug\cpipe.pdb
+C:\Users\Jack\Documents\Visual Studio 2017\Projects\ConcurrentPipe\ConcurrentPipe\obj\Debug\ConcurrentPipe.csproj.CoreCompileInputs.cache

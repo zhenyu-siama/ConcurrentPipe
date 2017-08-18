@@ -41,7 +41,7 @@ namespace ConcurrentPipe
                 foreach(string runnerKey in concurrentSettings.Runners.Keys)
                 {
                     RunnerSetting runner = concurrentSettings.Runners[runnerKey];
-                    ExecuteRunner(runner);
+                    ExecuteRunner(runner, new List<string>()).Wait();
                 }
             }
             else
@@ -51,17 +51,26 @@ namespace ConcurrentPipe
                     if (concurrentSettings.Runners.ContainsKey(arg))
                     {
                         RunnerSetting runner = concurrentSettings.Runners[arg];
-                        ExecuteRunner(runner);
+                        ExecuteRunner(runner, new List<string>()).Wait();
                     }
                 }
             }
             
         }
 
-        static void ExecuteRunner(RunnerSetting runner)
+        static async Task ExecuteRunner(RunnerSetting runner, List<string> paths)
         {
+            Console.WriteLine($"Begin Runner - {string.Join("->", paths.Append(runner.Name))}:");
+
             //execute all the commands first
-            Task.WaitAll(runner.Commands.Select(command => RunCommand(runner.Name, command)).ToArray(), runner.Timeout * 1000);
+            var whenAll = Task.WhenAll(runner.Commands.Select(command => RunCommand(runner.Name, command)));
+
+            if(await Task.WhenAny(whenAll, Task.Delay(1000 * runner.Timeout)) != whenAll) // check if task is timeout
+            {
+                Console.Error.WriteLine($"Runner \"{runner.Name}\" time out in {runner.Timeout} seconds while executing {string.Join(", ",  runner.Commands)}.");
+                Environment.Exit(1);
+                return;
+            }
 
             //then prepare the alive ones if there are any
             List<Regex> checks = runner.ReadyChecks?.Select(check => new Regex(check)).ToList();
@@ -71,17 +80,16 @@ namespace ConcurrentPipe
 
             //run all the sub runners in serial
             if(runner.Runners != null && runner.Runners.Count > 0)
-                foreach(RunnerSetting subRunner in runner.Runners)
-                {
-                    ExecuteRunner(subRunner);
-                }
+                await Task.WhenAll(runner.Runners.Select(subrunner => ExecuteRunner(subrunner, paths.Append(runner.Name))));
 
-            if(alives != null && alives.Count > 0)
+
+            if (alives != null && alives.Count > 0)
                 foreach(Process action in alives)
                 {
                     StopProcess(action);
                 }
 
+            Console.WriteLine($"End Runner - {string.Join("->", paths.Append(runner.Name))}.");
         }
 
         static ConcurrentSettings CreateConcurrentSetting(string filename)
@@ -265,5 +273,14 @@ namespace ConcurrentPipe
     }
 
 
+    public static class LinqExtensions
+    {
+        public static List<string> Append(this List<string> list, string value)
+        {
+            List<string> newlist = new List<string>(list);
+            newlist.Add(value);
+            return newlist;
+        }
+    }
 
 }

@@ -15,11 +15,44 @@
       ],
       "Runners": [
         {
-          "Name": "e2e test client",
+          "Name": "client 1",
           "Timeout": 900,
           "Commands": [
-            "node client",
-            "node error"
+            "node client"
+          ],
+          "Runners": [
+            {
+              "Name": "client error 1",
+              "Timeout": 900,
+              "Commands": [
+                "node client"
+              ]
+            },
+            {
+              "Name": "client 2",
+              "Timeout": 900,
+              "Commands": [
+                "node client"
+              ],
+              "Runners": [
+                {
+                  "Name": "client 3",
+                  "Timeout": 900,
+                  "Commands": [
+                    "node client"
+                  ],
+                  "Runners": [
+                  ]
+                }
+              ]
+            },
+            {
+              "Name": "client error 2",
+              "Timeout": 900,
+              "Commands": [
+                "node client"
+              ]
+            }
           ]
         }
       ]
