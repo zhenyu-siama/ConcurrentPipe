@@ -20,5 +20,6 @@ namespace ConcurrentPipe.Entities
         public int ReadyTimeout { get; set; } = 100;
         public List<string> Alives { get; set; }
         public List<RunnerSetting> Runners { get; set; }
+        public string Directory { get; set; }
     }
 }

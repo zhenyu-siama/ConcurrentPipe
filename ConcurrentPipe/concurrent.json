@@ -64,6 +64,17 @@
         "ng build",
         "ng build --prod --aot=false --environment=staging --output-path=dist/staging"
       ]
+    },
+    "ngbuilds": {
+      "Name": "ng builds in parallel",
+      "Timeout": 900,
+      "Commands": [
+        //"ng build",
+        //"ng build --prod",
+        //"ng build --output-path=dist/1",
+        "ng build --output-path=dist/2",
+        "ng build --output-path=dist/3"
+      ]
     }
   }
 }
