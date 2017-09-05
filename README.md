@@ -201,3 +201,8 @@ Take the following one as example:
       ]
     }
 ```
+
+## Some tricks for dotnet builds and tests
+The dotnet build commands can all accept the ```-o [folder name]``` option to do something in separate folder. When you are running your tests, please specify a "test" folder so that you can avoid file access conflicts in the parallel orchestration.
+
+cpipe has specific support for dotnet exception of "because it is being used by another process." and will retry a task if it captured that message in the output/error. With this feature, it can run almost all dotnet tasks in parallel.
